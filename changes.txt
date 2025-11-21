@@ -1,0 +1,16 @@
+# Change Log
+
+## 2025-11-20
+- **Created `schema.sql`**: Implemented the initial database schema provided by the user. This includes tables for `Library_Card`, `Identification`, `Computers_Session`, `Book`, `Items`, and `Fine`.
+- **Created `requirements.txt`**: Added necessary Python dependencies (`streamlit`, `psycopg2-binary`, `faker`, `pandas`).
+- **Created `seed_data.py`**: Developed a script to populate the database with dummy data for testing purposes. It handles relationships and randomizes data generation.
+- **Fixed `seed_data.py`**: Resolved a syntax error in the password string and updated `DB_USER`/`DB_PASS` with correct credentials.
+- **Database Setup**: Created the `library` database, applied `schema.sql`, and successfully seeded it with data.
+- **Created `.streamlit/secrets.toml`**: Configured database connection secrets for the Streamlit app.
+- **Created `app.py`**: Built the core Streamlit application with:
+    - **Dashboard**: Key metrics and recent activity.
+    - **Book Search**: Functionality to search books by title, author, or ISBN.
+    - **Member Lookup**: View member details, checkouts, and fines.
+- **Added Checkout/Return**: Implemented separate pages for checking out and returning books, with database updates.
+- **Added Admin Features**: Implemented an Admin Login (`admin`/`password`) in the sidebar that unlocks "All Members" and "All Books" pages.
+- **Added Computer Session Data**: Integrated `Computers_Session` data into the Dashboard (Active Sessions, Computers Avail) and Member Lookup (Sessions Used).
