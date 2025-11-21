@@ -26,7 +26,7 @@ A comprehensive Library Management System built with **Python**, **Streamlit**, 
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/library-management-system.git
+git clone https://github.com/FernCanCode/DBMS_Project_Library.git
 cd library-management-system
 ```
 
