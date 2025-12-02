@@ -63,7 +63,7 @@ def seed_data():
 
         print("Seeding Computers_Session...")
         # Not all cards have sessions
-        for card_id in random.sample(card_ids, 20):
+        for card_id in random.sample(card_ids, 25):
             num_sessions = random.randint(0, 10)
             remaining = random.randint(0, 5)
             cur.execute(
@@ -86,9 +86,9 @@ def seed_data():
             due_date = None
             checkout_status = 'Available'
             
-            if random.random() < 0.3: # 30% checked out
+            if random.random() < 0.4: # 40% checked out (increased for better query results)
                 lib_card_id = random.choice(card_ids)
-                checkout_date = fake.date_between(start_date='-1M', end_date='today')
+                checkout_date = fake.date_between(start_date='-2M', end_date='today')
                 due_date = checkout_date + timedelta(days=14)
                 checkout_status = 'Checked Out'
 
@@ -101,9 +101,9 @@ def seed_data():
 
         print("Seeding Items...")
         item_ids = []
-        for _ in range(20):
+        for _ in range(30):
             card_id = random.choice(card_ids) if random.random() < 0.5 else None
-            name = random.choice(['Laptop', 'Projector', 'Headphones', 'Tablet'])
+            name = random.choice(['Laptop', 'Projector', 'Headphones', 'Tablet', 'E-Reader', 'Calculator'])
             checkout_date = fake.date_between(start_date='-1M', end_date='today') if card_id else None
             due_date = checkout_date + timedelta(days=3) if checkout_date else None
             
@@ -114,7 +114,7 @@ def seed_data():
             item_ids.append(cur.fetchone()[0])
 
         print("Seeding Fine...")
-        for _ in range(15):
+        for _ in range(30):
             card_id = random.choice(card_ids)
             amount = round(random.uniform(1.0, 50.0), 2)
             status = random.choice(['Paid', 'Outstanding'])

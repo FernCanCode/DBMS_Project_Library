@@ -62,7 +62,7 @@ else:
     st.sidebar.success("Logged in as Admin")
 
 # Define Pages
-pages = ["Dashboard", "Book Search", "Member Lookup", "Checkout", "Return"]
+pages = ["Dashboard", "Book Search", "Member Lookup", "Checkout", "Return", "Reports & Analytics"]
 if st.session_state['is_admin']:
     pages.extend(["All Members", "All Books"])
 
@@ -245,6 +245,190 @@ elif page == "Return":
                     """, (isbn,))
                     
                     st.success(f"Successfully returned '{book_check.iloc[0]['title']}'!")
+
+elif page == "Reports & Analytics":
+    st.title("📊 Reports & Analytics")
+    st.markdown("### Advanced queries with JOINs and GROUP BY operations")
+    
+    # Create tabs for different reports
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "📚 Top Borrowers", 
+        "💰 Member Fines", 
+        "📖 Active Checkouts",
+        "💻 Computer Usage",
+        "⏰ Overdue Books"
+    ])
+    
+    with tab1:
+        st.subheader("Members with Most Checkouts")
+        st.markdown("**Query Type:** JOIN + GROUP BY")
+        st.markdown("**Tables Involved:** Library_Card, Book")
+        st.markdown("Shows members ranked by number of currently checked-out books")
+        
+        # Query 1: Member with Most Checkouts (GROUP BY + JOIN)
+        query1 = """
+            SELECT lc.card_id, lc.name, lc.card_type, COUNT(b.isbn) as num_books_checked_out
+            FROM Library_Card lc
+            JOIN Book b ON lc.card_id = b.lib_card_id
+            WHERE b.checkout_status = 'Checked Out'
+            GROUP BY lc.card_id, lc.name, lc.card_type
+            ORDER BY num_books_checked_out DESC
+            LIMIT 15
+        """
+        result1 = run_query(query1)
+        
+        if not result1.empty:
+            st.dataframe(result1, use_container_width=True)
+            
+            # Show summary stats
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Active Borrowers", len(result1))
+            with col2:
+                st.metric("Max Books Out", result1['num_books_checked_out'].max())
+            with col3:
+                st.metric("Avg Books/Borrower", f"{result1['num_books_checked_out'].mean():.2f}")
+        else:
+            st.info("No active checkouts found.")
+    
+    with tab2:
+        st.subheader("Total Fines by Member")
+        st.markdown("**Query Type:** JOIN + GROUP BY + HAVING")
+        st.markdown("**Tables Involved:** Library_Card, Fine")
+        st.markdown("Displays members with outstanding or paid fines, aggregated by member")
+        
+        # Filter options
+        fine_status_filter = st.radio("Filter by Fine Status:", ["All", "Outstanding", "Paid"], horizontal=True)
+        
+        # Query 2: Total Fines by Member (GROUP BY + JOIN)
+        if fine_status_filter == "All":
+            query2 = """
+                SELECT lc.card_id, lc.name, lc.card_type, 
+                       SUM(f.amount) as total_fines,
+                       COUNT(f.fine_id) as num_fines,
+                       SUM(CASE WHEN f.status = 'Outstanding' THEN f.amount ELSE 0 END) as outstanding_amount
+                FROM Library_Card lc
+                JOIN Fine f ON lc.card_id = f.card_id
+                GROUP BY lc.card_id, lc.name, lc.card_type
+                ORDER BY total_fines DESC
+            """
+        else:
+            query2 = f"""
+                SELECT lc.card_id, lc.name, lc.card_type, 
+                       SUM(f.amount) as total_fines,
+                       COUNT(f.fine_id) as num_fines
+                FROM Library_Card lc
+                JOIN Fine f ON lc.card_id = f.card_id
+                WHERE f.status = '{fine_status_filter}'
+                GROUP BY lc.card_id, lc.name, lc.card_type
+                HAVING SUM(f.amount) > 0
+                ORDER BY total_fines DESC
+            """
+        
+        result2 = run_query(query2)
+        
+        if not result2.empty:
+            st.dataframe(result2, use_container_width=True)
+            
+            # Summary metrics
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Total Fines Recorded", f"${result2['total_fines'].sum():.2f}")
+            with col2:
+                if 'outstanding_amount' in result2.columns:
+                    st.metric("Total Outstanding", f"${result2['outstanding_amount'].sum():.2f}")
+                else:
+                    st.metric("Members with Fines", len(result2))
+        else:
+            st.info(f"No {fine_status_filter.lower()} fines found.")
+    
+    with tab3:
+        st.subheader("Currently Checked Out Books with Member Information")
+        st.markdown("**Query Type:** JOIN")
+        st.markdown("**Tables Involved:** Book, Library_Card")
+        st.markdown("Lists all checked-out books along with borrower details and due dates")
+        
+        # Query 3: Books Checked Out with Member Info (JOIN)
+        query3 = """
+            SELECT b.isbn, b.title, b.author, lc.name as borrower, 
+                   lc.card_id, b.checkout_date, b.due_date,
+                   CURRENT_DATE - b.due_date as days_until_due
+            FROM Book b
+            JOIN Library_Card lc ON b.lib_card_id = lc.card_id
+            WHERE b.checkout_status = 'Checked Out'
+            ORDER BY b.due_date ASC
+        """
+        result3 = run_query(query3)
+        
+        if not result3.empty:
+            st.dataframe(result3, use_container_width=True)
+            st.metric("Total Books Checked Out", len(result3))
+        else:
+            st.info("No books currently checked out.")
+    
+    with tab4:
+        st.subheader("Computer Sessions by Card Type")
+        st.markdown("**Query Type:** JOIN + GROUP BY")
+        st.markdown("**Tables Involved:** Library_Card, Computers_Session")
+        st.markdown("Analyzes computer usage patterns across different membership types")
+        
+        # Query 4: Computer Sessions by Card Type (GROUP BY + JOIN)
+        query4 = """
+            SELECT lc.card_type, 
+                   COUNT(cs.session_id) as total_active_sessions,
+                   AVG(cs.num_of_sessions) as avg_sessions_per_member,
+                   SUM(cs.num_of_sessions) as total_sessions_all_time
+            FROM Library_Card lc
+            JOIN Computers_Session cs ON lc.card_id = cs.card_id
+            GROUP BY lc.card_type
+            ORDER BY total_active_sessions DESC
+        """
+        result4 = run_query(query4)
+        
+        if not result4.empty:
+            st.dataframe(result4, use_container_width=True)
+            
+            # Visualization
+            st.markdown("#### Session Distribution by Card Type")
+            chart_data = result4.set_index('card_type')['total_active_sessions']
+            st.bar_chart(chart_data)
+        else:
+            st.info("No computer session data available.")
+    
+    with tab5:
+        st.subheader("Overdue Books with Member Contact Information")
+        st.markdown("**Query Type:** JOIN with Date Filtering")
+        st.markdown("**Tables Involved:** Book, Library_Card")
+        st.markdown("Shows all overdue books with borrower details for follow-up")
+        
+        # Query 5: Overdue Books with Member Contact (JOIN)
+        query5 = """
+            SELECT b.isbn, b.title, b.author, lc.card_id, lc.name as borrower, 
+                   lc.card_type, b.checkout_date, b.due_date,
+                   CURRENT_DATE - b.due_date as days_overdue
+            FROM Book b
+            JOIN Library_Card lc ON b.lib_card_id = lc.card_id
+            WHERE b.checkout_status = 'Checked Out' 
+              AND b.due_date < CURRENT_DATE
+            ORDER BY days_overdue DESC
+        """
+        result5 = run_query(query5)
+        
+        if not result5.empty:
+            st.warning(f"⚠️ {len(result5)} overdue book(s) found!")
+            st.dataframe(result5, use_container_width=True)
+            
+            # Calculate potential fines (assuming $0.50/day)
+            total_days_overdue = result5['days_overdue'].sum()
+            potential_fines = total_days_overdue * 0.50
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Total Days Overdue", int(total_days_overdue))
+            with col2:
+                st.metric("Potential Fines (@$0.50/day)", f"${potential_fines:.2f}")
+        else:
+            st.success("✅ No overdue books!")
 
 elif page == "All Members":
     st.title("👥 All Members")
