@@ -45,12 +45,12 @@ pip install -r requirements.txt
 Create the database and apply the schema:
 ```bash
 createdb library
-psql -d library -f schema.sql
+psql -d library -f code/schema.sql
 ```
 
 (Optional) Seed the database with dummy data:
 ```bash
-python3 seed_data.py
+python3 data/seed_data.py
 ```
 
 ### 4. Configure Secrets
@@ -70,7 +70,7 @@ password = "your_postgres_password"
 Launch the Streamlit application:
 
 ```bash
-streamlit run app.py
+streamlit run code/project.py
 ```
 
 The app will open automatically in your default web browser at `http://localhost:8501`.
@@ -84,9 +84,9 @@ To access the Admin features (All Members & All Books views), use the sidebar lo
 
 ## 📂 Project Structure
 
-*   `app.py`: Main application entry point and UI logic.
-*   `schema.sql`: Database schema definitions.
-*   `seed_data.py`: Script to generate and insert dummy data.
+*   `code/project.py`: Main application entry point and UI logic.
+*   `code/schema.sql`: Database schema definitions.
+*   `data/seed_data.py`: Script to generate and insert dummy data.
 *   `requirements.txt`: Python dependencies.
 
 ---
@@ -199,7 +199,7 @@ ORDER BY days_overdue DESC
 
 ### Implementation Summary
 
-All 5 queries are implemented in the `app.py` file within the "Reports & Analytics" page (lines 249-430). Each query:
+All 5 queries are implemented in the `code/project.py` file within the "Reports & Analytics" page (lines 249-430). Each query:
 - Combines data from multiple tables using JOINs
 - Uses aggregation functions (COUNT, SUM, AVG) with GROUP BY where applicable
 - Provides meaningful user interactions (filters, radio buttons, tabs)
